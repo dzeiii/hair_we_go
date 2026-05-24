@@ -60,16 +60,40 @@ if not st.session_state.gender_selected:
             st.rerun()
                 
     st.stop() # Stops execution here so nothing else shows up until selection is made
-    
+# --- DASHBOARD RE-ENTERS HERE ONCE CONFIRMED ---
+st.sidebar.header("App Configurations")
+st.sidebar.write(f"Current Category: **{st.session_state.gender.capitalize()}**")
+if st.sidebar.button("Switch Gender Category"):
+    st.session_state.gender_selected = False
+    st.rerun()
+
+
 st.write("---")
 st.write("### 📸 Step 1: Capture or Upload Your Face Image")
 source_option = st.radio("Choose Input Method:", ("Use Live Camera", "Upload Image File"))
 
 captured_image = None
 if source_option == "Use Live Camera":
+    st.markdown(
+        """
+        <style>
+        [data-testid="stCameraInput"] video {
+            width: 400px !important;
+            height: 300px !important;
+            object-fit: cover !important;
+            border-radius: 10px;
+            margin: 0 auto;
+        }
+        [data-testid="stCameraInput"] {
+            width: 400px !important;
+            margin: 0 auto;
+        }
+        </style>
+        """,
+        unsafe_html=True
+    )
+    
     camera_input = st.camera_input("Position your face clearly in the center")
-    if camera_input is not None:
-        captured_image = Image.open(camera_input)
 else:
     file_input = st.file_uploader("Upload a front-facing portrait photo", type=["jpg", "jpeg", "png"])
     if file_input is not None:
