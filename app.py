@@ -29,9 +29,44 @@ else:
     st.error("Model file 'face_shape_model.h5' not found in your folder!")
     st.stop()
 
-# Sidebar Setup - Keep values clean and explicit
-st.sidebar.header("User Settings")
-gender = st.sidebar.radio("Select Gender Category:", ("men", "women"))
+# --- NEW OVERLAY MODAL LOGIC ---
+# Initialize session state variables if they do not exist
+if "gender_selected" not in st.session_state:
+    st.session_state.gender_selected = False
+if "gender" not in st.session_state:
+    st.session_state.gender = "men"
+
+# Define the pop-up modal function
+@st.dialog("Welcome to HAIR WE GO! 👋", clear_on_submit=False)
+def gender_selection_modal():
+    st.write("Please select your gender category to customize your 3x3 hairstyle recommendations:")
+    
+    # Store choice in a temporary variable
+    choice = st.radio(
+        "Choose Category:", 
+        ("Men's Hairstyles", "Women's Hairstyles"),
+        index=0 if st.session_state.gender == "men" else 1
+    )
+    
+    if st.button("Confirm & Enter App", type="primary"):
+        # Map choice to exact folder keys
+        st.session_state.gender = "men" if choice == "Men's Hairstyles" else "women"
+        st.session_state.gender_selected = True
+        st.rerun()
+
+# Trigger the pop-up automatically if the user hasn't made a choice yet
+if not st.session_state.gender_selected:
+    gender_selection_modal()
+    st.info("⚠️ Please select your category in the pop-up window to unlock the app features.")
+    st.stop()  # Completely stops rendering the rest of the app until they confirm
+
+# --- MAIN APP ENTERS HERE AFTER CONFIRMATION ---
+# Show a small reset option in the sidebar in case they want to switch genders later
+st.sidebar.header("App Configurations")
+st.sidebar.write(f"Current Category: **{st.session_state.gender.capitalize()}**")
+if st.sidebar.button("Switch Gender Category"):
+    st.session_state.gender_selected = False
+    st.rerun()
 
 st.write("---")
 st.write("### 📸 Step 1: Capture or Upload Your Face Image")
@@ -59,7 +94,7 @@ if captured_image is not None:
     input_batch = np.expand_dims(resized_img, axis=0)
     
     # Run prediction
-    predictions = model.predict(input_batch, verbose=0)[0]  # <-- ADDED [0] HERE
+    predictions = model.predict(input_batch, verbose=0)
     
     highest_score_index = np.argmax(predictions)
     detected_shape = LABELS[highest_score_index]
@@ -68,11 +103,11 @@ if captured_image is not None:
     st.success(f"🎉 **Analysis Complete!** We detected a **{detected_shape.upper()}** face shape ({confidence_score:.1f}%)")
     
     st.write("---")
-    st.write(f"### 📋 Step 3: Your Suggested {gender.capitalize()} Hairstyles")
+    st.write(f"### 📋 Step 3: Your Suggested {st.session_state.gender.capitalize()} Hairstyles")
     
-    # Format strings strictly to strip out invisible break flags
+    # Format strings strictly
     shape_folder = str(detected_shape).lower().strip()
-    gender_file = str(gender).lower().strip()
+    gender_file = str(st.session_state.gender).lower().strip()
     
     # List all common extensions to check sequentially
     possible_extensions = ['.png', '.PNG', '.jpg', '.jpeg', '.JPG', '.JPEG']
@@ -82,7 +117,7 @@ if captured_image is not None:
         test_path = os.path.join(ASSET_DIR, f"{shape_folder}/{gender_file}{ext}")
         if os.path.exists(test_path):
             recommendation_path = test_path
-            break  # Stop checking once we find a match!
+            break
 
     # Render the discovered file asset safely to the interface layout
     if recommendation_path is not None:
@@ -93,7 +128,6 @@ if captured_image is not None:
         st.write("---")
         st.write("### ⚠️ Hairstyles & Haircuts to Avoid")
         
-        # Base rules applicable to all genders
         avoidance_tips = {
             'oval': [
                 "**Avoid heavy, long straight blunt bangs** that cut straight across your face, as they block your features and make a naturally balanced oval head shape look shorter.",
@@ -113,7 +147,6 @@ if captured_image is not None:
             ]
         }
         
-        # Gender-specific list mapping dictionary
         specific_cuts_to_avoid = {
             'oval': {
                 'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** High and tight mohawks, extremely high pomp-fades with bald-shaved sides, or flat micro-fringes.",
@@ -133,22 +166,17 @@ if captured_image is not None:
             }
         }
         
-        # Display the formatted tips inside a clean container box
         if shape_folder in avoidance_tips:
             with st.container(border=True):
                 st.markdown(f"#### 🚫 Styling Red Flags for {detected_shape.upper()} Profiles ({gender_file.upper()}):")
                 
-                # Print the general rules
                 for tip in avoidance_tips[shape_folder]:
                     st.write(f"- {tip}")
                 
-                # Fetch gender specific rule text block safely without variable collisions
                 if shape_folder in specific_cuts_to_avoid:
                     gender_data = specific_cuts_to_avoid[shape_folder]
                     if gender_file in gender_data:
                         st.write(f"- {gender_data[gender_file]}")
-                    else:
-                        st.write(f"Debug: gender key '{gender_file}' not found.")
                         
     else:
         st.error(f"❌ Asset file missing inside folder structure! Searched for '{gender_file}' variations inside 'hairstyle_dataset/{shape_folder}/'")
