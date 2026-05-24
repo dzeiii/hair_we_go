@@ -1,1 +1,1 @@
-freeglut3
+libglut3.12
