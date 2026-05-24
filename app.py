@@ -46,7 +46,7 @@ if not st.session_state.gender_selected:
         # Display selection tool
         category_choice = st.selectbox(
             "Select Your Gender Category:",
-            ["-- Choose Options --", "Men's Hairstyles", "Women's Hairstyles"]
+            ["-- Choose Options --", "Men", "Women"]
         )
         
         if category_choice != "-- Choose Options --":
