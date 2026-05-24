@@ -118,24 +118,27 @@ if captured_image is not None:
     
     img_array = np.array(captured_image.convert('RGB'))
     
-    # --- MODERN DEEP LEARNING HUMAN FACE VALIDATION LAYER VIA MEDIAPIPE ---
-    results = face_detector.process(img_array)
+    # Ensure image is in standard RGB channel format for MediaPipe tracking
+    rgb_img = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB)
+    results = face_detector.process(rgb_img)
     
-    if not results.detections:
+    # 🚨 TEST FOR HUMAN VALIDATION RIGHT AWAY 🚨
+    if results.detections is None or len(results.detections) == 0:
         st.warning("⚠️ **Invalid Image Content Detected**")
-        st.error("No valid human face profile was found in this photo. Please make sure you are capturing a clear, front-facing portrait of a person and try again!")
+        st.error("No valid human face profile was found in this photo. Please make sure you are capturing a clean, front-facing portrait of a person without background text, overlays, or icons, and try again!")
     else:
-        # --- PROCEED WITH AI PREDICTION IF REAL FACE IS CONFIRMED ---
+        # --- PROCEED WITH AI PREDICTION ONLY IF A REAL FACE IS CONFIRMED ---
         resized_img = cv2.resize(img_array, (224, 224)) / 255.0
         input_batch = np.expand_dims(resized_img, axis=0)
         
         predictions = model.predict(input_batch, verbose=0)
-        prob_distribution = predictions[0]
+        prob_distribution = predictions[0] 
         
         highest_score_index = np.argmax(prob_distribution)
         detected_shape = LABELS[highest_score_index]
         confidence_score = float(prob_distribution[highest_score_index] * 100)
         
+        # Professional certainty threshold floor
         CONFIDENCE_THRESHOLD = 40.0
         
         if confidence_score >= CONFIDENCE_THRESHOLD:
@@ -152,6 +155,7 @@ if captured_image is not None:
                 
             gender_file = str(st.session_state.gender).lower().strip()
             
+            # Extension scanning pipeline
             possible_extensions = ['.png', '.PNG', '.jpg', '.jpeg', '.JPG', '.JPEG']
             recommendation_path = None
             
@@ -164,7 +168,7 @@ if captured_image is not None:
             if recommendation_path is not None:
                 recommendation_graphic = Image.open(recommendation_path)
                 st.image(recommendation_graphic, use_column_width=True, caption=f"Best styles for {display_title} faces")
-
+                
                 st.write("---")
                 st.write("### ⚠️ Hairstyles & Haircuts to Avoid")
                 
@@ -215,21 +219,20 @@ if captured_image is not None:
                 }
                 
                 tip_lookup = 'oval' if shape_folder == 'oval' and detected_shape.lower().strip() == 'oblong' else shape_folder
-        
-                # Render the advice cards dynamically using standard native containers
+                
                 if tip_lookup in avoidance_tips:
                     with st.container(border=True):
                         st.markdown(f"#### 🚫 Styling Red Flags for {detected_shape.upper()} Profiles ({gender_file.upper()}):")
                         for tip in avoidance_tips[tip_lookup]:
                             st.write(f"- {tip}")
-                            
                         if tip_lookup in specific_cuts_to_avoid:
                             gender_data = specific_cuts_to_avoid[tip_lookup]
                             if gender_file in gender_data:
                                 st.write(f"- {gender_data[gender_file]}")
-                else:
-                    st.error("❌ Asset file missing inside folder structure! Please ensure your men.png or women.png cards are uploaded correctly to your hairstyle_dataset folders on GitHub.")
-                        
             else:
-                st.warning(f"⚠️ Low Prediction Confidence ({confidence_score:.1f}%)")
-                st.error("The AI is uncertain about your face shape due to lighting angles or background clutter. Please look straight forward under clear lighting and capture a new image profile.")
+                st.error("❌ Asset file missing inside folder structure! Please ensure your men.png or women.png cards are uploaded correctly to your hairstyle_dataset folders on GitHub.")
+        else:
+            # Low confidence alert trigger block runs safely if face is real but obscure
+            st.warning(f"⚠️ **Low Prediction Confidence ({confidence_score:.1f}%)**")
+            st.error("The AI is uncertain about your face shape due to lighting angles or background clutter. Please look straight forward under clear lighting and capture a new image profile.")
+
