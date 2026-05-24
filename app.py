@@ -46,13 +46,13 @@ if not st.session_state.gender_selected:
         # Display selection tool
         category_choice = st.selectbox(
             "Select Your Gender Category:",
-            ["-- Choose Options --", "Men", "Women"]
+            ["Choose Options", "Men", "Women"]
         )
         
-        if category_choice != "-- Choose Options --":
-            if st.button("Confirm Selection & Enter Dashboard", type="primary"):
+        if category_choice != "Choose Options ":
+            if st.button("Confirm", type="primary"):
                 # Map choice directly to folder structures
-                st.session_state.gender = "men" if category_choice == "Men's Hairstyles" else "women"
+                st.session_state.gender = "men" if category_choice == "Men" else "women"
                 st.session_state.gender_selected = True
                 st.rerun()
                 
