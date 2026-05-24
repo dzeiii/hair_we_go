@@ -206,7 +206,7 @@ if captured_image is not None:
                     ]
                 }
                 
-              specific_cuts_to_avoid = {
+                  specific_cuts_to_avoid = {
                     'oval': {
                         'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** High and tight mohawks, extremely high pomp-fades with bald-shaved sides, or flat micro-fringes.",
                         'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Severe slicked-back high ponytails with zero face-framing layers, or bone-straight micro-bangs."
