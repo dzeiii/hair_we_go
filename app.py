@@ -108,26 +108,25 @@ if captured_image is not None:
     # Convert picture array data cleanly
     img_array = np.array(captured_image.convert('RGB'))
     
-    # --- NEW FEATURE: HUMAN FACE STRUCTURAL VALIDATION LAYER ---
-    # Load OpenCV's built-in face detector tool
+    # --- HUMAN FACE STRUCTURAL VALIDATION LAYER ---
     gray_img = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     
-    # Scan the matrix array for structural features matching a human face outline
+    # Scan for human face features
     detected_faces = face_cascade.detectMultiScale(gray_img, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     
-    # If NO human face structures are found on the camera layer canvas boundary box:
+    # If NO human face structures are found on screen:
     if len(detected_faces) == 0:
         st.warning("⚠️ **Invalid Image Content Detected**")
         st.error("No valid human face profile was found in this photo. Please make sure you are capturing a clear, front-facing portrait of a person and try again!")
     else:
-        # --- PROCEED WITH AI PREDICTION ONLY IF A REAL FACE IS CONFIRMED ---
+        # --- PROCEED WITH AI PREDICTION IF REAL FACE IS CONFIRMED ---
         resized_img = cv2.resize(img_array, (224, 224)) / 255.0
         input_batch = np.expand_dims(resized_img, axis=0)
         
         # Run prediction weights
         predictions = model.predict(input_batch, verbose=0)
-        prob_distribution = predictions[0]
+        prob_distribution = predictions
         
         highest_score_index = np.argmax(prob_distribution)
         detected_shape = LABELS[highest_score_index]
@@ -136,7 +135,7 @@ if captured_image is not None:
         CONFIDENCE_THRESHOLD = 40.0
         
         if confidence_score >= CONFIDENCE_THRESHOLD:
-            st.success(f"🎉 **Analysis Complete!** We detected an **{detected_shape.upper()}** face shape ({confidence_score:.1f}%)")
+            st.success(f"🎉 **Analysis Complete!** We detected a **{detected_shape.upper()}** face shape ({confidence_score:.1f}%)")
             st.write("---")
             st.write(f"### 📋 Step 3: Your Suggested {st.session_state.gender.capitalize()} Hairstyles")
             
@@ -149,6 +148,7 @@ if captured_image is not None:
                 
             gender_file = str(st.session_state.gender).lower().strip()
             
+            # Check all possible extensions
             possible_extensions = ['.png', '.PNG', '.jpg', '.jpeg', '.JPG', '.JPEG']
             recommendation_path = None
             
@@ -162,61 +162,78 @@ if captured_image is not None:
                 recommendation_graphic = Image.open(recommendation_path)
                 st.image(recommendation_graphic, use_container_width=True, caption=f"Best styles for {display_title} faces")
                 
-            if recommendation_path is not None:
-                recommendation_graphic = Image.open(recommendation_path)
-                st.image(recommendation_graphic, use_container_width=True, caption=f"Best styles for {display_title} faces")
+                st.write("---")
                 
-            st.write("---")
-            st.write("### ⚠️ Hairstyles & Haircuts to Avoid")
-            avoidance_tips = {
-                'oval': [
-                    "**Avoid heavy, long straight blunt bangs** that cut straight across your face, as they block your features and make a naturally balanced oval head shape look shorter.",
-                    "**Avoid hairstyles that add excessive height or volume** directly on the top without any width, which can stretch your facial features and make your face appear artificially long."
-                ],
-                'oblong': [
-                    "**Avoid excessive volume right on top** with slick sides, which adds unnatural vertical length to your face structure.",
-                    "**Avoid sleek, extra-long straight cuts** without any layers, as they drop straight down and stretch your facial features out visually."
-                ],
-                'round': [
-                    "**Avoid sleek, flat surfaces** that hug your face line, as they act like a border highlighting the roundness of your cheeks.",
-                    "**Avoid slicked-back styles or middle parts with zero top volume**, which compress your forehead proportions and make the face shape look even wider."
-                ],
-                'heart': [
-                    "**Avoid heavy top volume or high pompadours**, as they add bulk to an already wide forehead line and accent a narrow chin.",
-                    "**Avoid short, blunt-cut wispy bangs** or styles that end harshly right at your cheekbone levels, which can visually expand the upper half of your face."
-                ],
-                'square': [
-                    "**Avoid sharp, blunt-cut straight fringes or geometric box layouts**, as these parallel lines emphasize harsh jawline edges and make your face look boxy.",
-                    "**Avoid slicked-back look variations or center parts with completely flat sides** that offer zero soft volume around the sides of your face."
-                ]
-            }
-            
-            specific_cuts_to_avoid = {
-                'oval': {
-                    'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** High and tight mohawks, extremely high pomp-fades with bald-shaved sides, or flat micro-fringes.",
-                    'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Severe slicked-back high ponytails with zero face-framing layers, or bone-straight micro-bangs."
-                },
-                'oblong': {
-                    'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Extra high top-knots, dramatic side-part undercuts with zero side bulk, or extreme spikes.",
-                    'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Sleek middle-parted waist-length straight hair, or harsh short pixie cuts with zero width."
-                },
-                'round': {
-                    'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Flat, slicked-back side-parts, buzz cuts with zero top texture, or heavy bowl cuts.",
-                    'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** The classic blunt chin-length bob, flat pixie cuts with zero top texture, or sleek pageboy styles."
-                },
-                'heart': {
-                    'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Slicked-back undercut fades, wide straight-across block bangs, or high top-knots.",
-                    'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Short geometric pixie cuts with severe bangs, or harsh chin-length blunt cuts."
-                },
-                'square': {
-                    'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Geometric flat tops, severe slicked-back buzz cuts with hard lines, or wide square block-fades.",
-                    'women': "**❌ SPECIFIC HAIRCUTS TO AVOID: Sharp blunt flapper bobs, severe slicked-back buns, or straight-across heavy blunt fringes."
+                # --- DYNAMIC TEXT CONTENT TO AVOID MATRIX ---
+                avoidance_tips = {
+                    'oval': [
+                        "**Avoid heavy, long straight blunt bangs** that cut straight across your face, as they block your features and make a naturally balanced oval head shape look shorter.",
+                        "**Avoid hairstyles that add excessive height or volume** directly on the top without any width, which can stretch your facial features and make your face appear artificially long."
+                    ],
+                    'oblong': [
+                        "**Avoid excessive volume right on top** with slick sides, which adds unnatural vertical length to your face structure.",
+                        "**Avoid sleek, extra-long straight cuts** without any layers, as they drop straight down and stretch your facial features out visually."
+                    ],
+                    'round': [
+                        "**Avoid sleek, flat surfaces** that hug your face line, as they act like a border highlighting the roundness of your cheeks.",
+                        "**Avoid slicked-back styles or middle parts with zero top volume**, which compress your forehead proportions and make the face shape look even wider."
+                    ],
+                    'heart': [
+                        "**Avoid heavy top volume or high pompadours**, as they add bulk to an already wide forehead line and accent a narrow chin.",
+                        "**Avoid short, blunt-cut wispy bangs** or styles that end harshly right at your cheekbone levels, which can visually expand the upper half of your face."
+                    ],
+                    'square': [
+                        "**Avoid sharp, blunt-cut straight fringes or geometric box layouts**, as these parallel lines emphasize harsh jawline edges and make your face look boxy.",
+                        "**Avoid slicked-back look variations or center parts with completely flat sides** that offer zero soft volume around the sides of your face."
+                    ]
                 }
-            }
-
+                
+                specific_cuts_to_avoid = {
+                    'oval': {
+                        'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** High and tight mohawks, extremely high pomp-fades with bald-shaved sides, or flat micro-fringes.",
+                        'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Severe slicked-back high ponytails with zero face-framing layers, or bone-straight micro-bangs."
+                    },
+                    'oblong': {
+                        'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Extra high top-knots, dramatic side-part undercuts with zero side bulk, or extreme spikes.",
+                        'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Sleek middle-parted waist-length straight hair, or harsh short pixie cuts with zero width."
+                    },
+                    'round': {
+                        'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Flat, slicked-back side-parts, buzz cuts with zero top texture, or heavy bowl cuts.",
+                        'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** The classic blunt chin-length bob, flat pixie cuts with zero top texture, or sleek pageboy styles."
+                    },
+                    'heart': {
+                        'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Slicked-back undercut fades, wide straight-across block bangs, or high top-knots.",
+                        'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Short geometric pixie cuts with severe bangs, or harsh chin-length blunt cuts."
+                    },
+                    'square': {
+                        'men': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Geometric flat tops, severe slicked-back buzz cuts with hard lines, or wide square block-fades.",
+                        'women': "**❌ SPECIFIC HAIRCUTS TO AVOID:** Sharp blunt flapper bobs, severe slicked-back buns, or straight-across heavy blunt fringes."
+                    }
+                }
+                
+                tip_lookup = 'oval' if shape_folder == 'oval' and detected_shape.lower().strip() == 'oblong' else shape_folder
+                
+                if tip_lookup in avoidance_tips:
+                    st.markdown(
+                        f"""
+                        <div class="avoidance-card-container">
+                            <h4 class="avoidance-header">⚠️ Hairstyles & Haircuts to Avoid for {detected_shape.upper()} Profiles ({gender_file.upper()})</h4>
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
+                    
+                    for tip in avoidance_tips[tip_lookup]:
+                        st.write(f"- {tip}")
+                    
+                    if tip_lookup in specific_cuts_to_avoid:
+                        gender_data = specific_cuts_to_avoid[tip_lookup]
+                        if gender_file in gender_data:
+                            st.write(f"- {gender_data[gender_file]}")
+                                
             else:
                 st.error("❌ Asset file missing inside folder structure! Please ensure your men.png or women.png cards are uploaded correctly to your hairstyle_dataset folders on GitHub.")
-            
-    else:
-        st.warning(f"⚠️ **Low Prediction Confidence ({confidence_score:.1f}%)**")
-        st.error("The AI is uncertain about your face shape due to lighting angles or background clutter. Please look straight forward under clear lighting and capture a new image profile.")
+                
+        else:
+            st.warning(f"⚠️ **Low Prediction Confidence ({confidence_score:.1f}%)**")
+            st.error("The AI is uncertain about your face shape due to lighting angles or background clutter. Please look straight forward under clear lighting and capture a new image profile.")
