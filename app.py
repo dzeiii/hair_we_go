@@ -126,8 +126,8 @@ if captured_image is not None:
         st.write(f"### 📋 Step 3: Your Suggested {st.session_state.gender.capitalize()} Hairstyles")
         
         if detected_shape.lower().strip() == "oblong":
-            shape_folder = "oval"
-            display_title = "OVAL/OBLONG"
+            shape_folder = "oblong"
+            display_title = "OBLONG"
         else:
             shape_folder = str(detected_shape).lower().strip()
             display_title = detected_shape.upper()
@@ -148,8 +148,6 @@ if captured_image is not None:
             st.image(recommendation_graphic, use_container_width=True, caption=f"Best styles for {display_title} faces")
             
             st.write("---")
-            st.write("### ⚠️ Hairstyles & Haircuts to Avoid")
-            
             avoidance_tips = {
                 'oval': [
                     "**Avoid heavy, long straight blunt bangs** that cut straight across your face, as they block your features and make a naturally balanced oval head shape look shorter.",
